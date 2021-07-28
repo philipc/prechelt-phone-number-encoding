@@ -14,6 +14,8 @@ lazy_static! {
     static ref TEN: BigUint = 10u8.into();
 }
 
+static DIGITS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
 /// Port of Peter Norvig's Lisp solution to the Prechelt phone-encoding problem.
 ///
 /// Even though this is intended as a port, it deviates quite a bit from it
@@ -26,47 +28,48 @@ fn main() -> io::Result<()> {
 
     let dict = load_dict(words_file)?;
 
+    let mut words = Vec::new();
     for num in read_lines(input_file)?.flatten() {
         let digits: Vec<_> = num.chars().filter(|ch| ch.is_digit(10)).collect();
-        print_translations(&num, &digits, 0, Vec::new(), &dict)?;
+        print_translations(&num, &digits, 0, &mut words, &dict)?;
     }
     Ok(())
 }
 
-fn print_translations(
+fn print_translations<'dict>(
     num: &str,
     digits: &[char],
     start: usize,
-    words: Vec<&String>,
-    dict: &Dictionary,
+    words: &mut Vec<&'dict str>,
+    dict: &'dict Dictionary,
 ) -> io::Result<()> {
     if start >= digits.len() {
-        print_solution(num, &words);
+        print_solution(num, words);
         return Ok(());
     }
     let mut n = ONE.clone();
     let mut found_word = false;
     for i in start..digits.len() {
-        n = &n * (&*TEN) + &nth_digit(digits, i);
+        n = &n * (&*TEN) + nth_digit(digits, i);
         if let Some(found_words) = dict.get(&n) {
             for word in found_words {
                 found_word = true;
-                let mut partial_solution = words.clone();
-                partial_solution.push(word);
-                print_translations(num, digits, i + 1, partial_solution, dict)?;
+                words.push(word);
+                print_translations(num, digits, i + 1, words, dict)?;
+                words.pop();
             }
         }
     }
     if !found_word && !words.last().map(|w| is_digit(w)).unwrap_or(false) {
-        let mut partial_solution = words.clone();
-        let digit = nth_digit(digits, start).to_string();
-        partial_solution.push(&digit);
-        print_translations(num, digits, start + 1, partial_solution, dict)?;
+        let digit = nth_digit(digits, start);
+        words.push(DIGITS[digit]);
+        print_translations(num, digits, start + 1, words, dict)?;
+        words.pop();
     }
     Ok(())
 }
 
-fn print_solution(num: &str, words: &[&String]) {
+fn print_solution(num: &str, words: &[&str]) {
     print!("{}:", num);
     for word in words {
         print!(" {}", word);
@@ -102,8 +105,8 @@ fn word_to_number(word: &str) -> BigUint {
     n
 }
 
-fn nth_digit(digits: &[char], i: usize) -> BigUint {
-    ((digits[i] as usize) - ('0' as usize)).into()
+fn nth_digit(digits: &[char], i: usize) -> usize {
+    (digits[i] as usize) - ('0' as usize)
 }
 
 fn is_digit(string: &str) -> bool {
