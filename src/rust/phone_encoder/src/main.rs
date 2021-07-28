@@ -34,18 +34,16 @@ fn main() -> io::Result<()> {
 
     let dict = load_dict(words_file)?;
 
-    for line in read_lines(input_file)? {
-        if let Ok(num) = line {
-            let digits: Vec<_> = num.chars().filter(|ch| ch.is_alphanumeric()).collect();
-            print_translations(&num, &digits, 0, Vec::new(), &dict)?;
-        }
+    for num in read_lines(input_file)?.flatten() {
+        let digits: Vec<_> = num.chars().filter(|ch| ch.is_alphanumeric()).collect();
+        print_translations(&num, &digits, 0, Vec::new(), &dict)?;
     }
     Ok(())
 }
 
 fn print_translations(
     num: &str,
-    digits: &Vec<char>,
+    digits: &[char],
     start: usize,
     words: Vec<&String>,
     dict: &Dictionary,
@@ -77,7 +75,7 @@ fn print_translations(
     }
 }
 
-fn print_solution(num: &str, words: &Vec<&String>) {
+fn print_solution(num: &str, words: &[&String]) {
     // do a little gymnastics here to avoid allocating a big string just for printing it
     print!("{}", num);
     if words.is_empty() {
@@ -97,13 +95,10 @@ fn print_solution(num: &str, words: &Vec<&String>) {
 
 fn load_dict(words_file: String) -> io::Result<Dictionary> {
     let mut dict = HashMap::with_capacity(100);
-    let words = read_lines(words_file)?;
-    for line in words {
-        if let Ok(word) = line {
-            let key = word_to_number(&word);
-            let words = dict.entry(key).or_insert_with(|| Vec::new());
-            words.push(word);
-        }
+    for word in read_lines(words_file)?.flatten() {
+        let key = word_to_number(&word);
+        let words = dict.entry(key).or_insert_with(Vec::new);
+        words.push(word);
     }
     Ok(dict)
 }
@@ -122,13 +117,13 @@ fn word_to_number(word: &str) -> BigUint {
     let mut n = ONE.clone();
     for ch in word.chars() {
         if ch.is_alphabetic() {
-            n = &n * (&*TEN) + &char_to_digit(ch);
+            n = &n * (&*TEN) + char_to_digit(ch);
         }
     }
     n
 }
 
-fn nth_digit(digits: &Vec<char>, i: usize) -> BigUint {
+fn nth_digit(digits: &[char], i: usize) -> BigUint {
     let ch = digits.get(i).expect("index out of bounds");
     ((*ch as usize) - ('0' as usize)).to_biguint().unwrap()
 }
