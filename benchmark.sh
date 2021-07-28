@@ -22,7 +22,7 @@ javac src/java/util/*.java -d build/util
 
 echo "Compiling Rust sources"
 cd src/rust/phone_encoder && cargo build --release && cp target/release/phone_encoder ../../../
-cd ../benchmark_runner && cargo build --release && cp target/release/benchmark_runner ../../../
+#cd ../benchmark_runner && cargo build --release && cp target/release/benchmark_runner ../../../
 cd ../../..
 
 echo "Generating inputs"
@@ -52,8 +52,8 @@ for CMD in "${COMMANDS[@]}"
 do
   echo "===> $CMD"
   # shellcheck disable=SC2086
-  for file in "${INPUTS[@]}"; do ./benchmark_runner $CMD $DICTIONARY "$file"; done;
+  for file in "${INPUTS[@]}"; do /usr/bin/time -f '%Mkb, %es' $CMD $DICTIONARY "$file" > /dev/null; done;
 done
 
-echo "Cleaning up"
-rm "${INPUTS[@]}" "$CHECK_FILE" phone_encoder benchmark_runner
+#echo "Cleaning up"
+#rm "${INPUTS[@]}" "$CHECK_FILE" phone_encoder benchmark_runner
