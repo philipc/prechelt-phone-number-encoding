@@ -11,7 +11,7 @@ type Dictionary = HashMap<BigUint, Vec<String>>;
 
 lazy_static! {
     static ref ONE: BigUint = 1.to_biguint().unwrap();
-    static ref TEN: BigUint =10.to_biguint().unwrap();
+    static ref TEN: BigUint = 10.to_biguint().unwrap();
 }
 
 /// Port of Peter Norvig's Lisp solution to the Prechelt phone-encoding problem.
@@ -21,16 +21,22 @@ lazy_static! {
 fn main() -> io::Result<()> {
     // drop itself from args
     let mut args: Vec<_> = args().skip(1).collect();
-    let words_file: String = if !args.is_empty() { args.remove(0) } else { "tests/words.txt".into() };
-    let input_file: String = if !args.is_empty() { args.remove(0) } else { "tests/numbers.txt".into() };
+    let words_file: String = if !args.is_empty() {
+        args.remove(0)
+    } else {
+        "tests/words.txt".into()
+    };
+    let input_file: String = if !args.is_empty() {
+        args.remove(0)
+    } else {
+        "tests/numbers.txt".into()
+    };
 
     let dict = load_dict(words_file)?;
 
     for line in read_lines(input_file)? {
         if let Ok(num) = line {
-            let digits: Vec<_> = num.chars()
-                .filter(|ch| ch.is_alphanumeric())
-                .collect();
+            let digits: Vec<_> = num.chars().filter(|ch| ch.is_alphanumeric()).collect();
             print_translations(&num, &digits, 0, Vec::new(), &dict)?;
         }
     }
@@ -83,7 +89,8 @@ fn print_solution(num: &str, words: &Vec<&String>) {
     for word in head {
         print!("{} ", word);
     }
-    for word in tail { // only last word in tail
+    // only last word in tail
+    for word in tail {
         println!("{}", word);
     }
 }
@@ -104,7 +111,9 @@ fn load_dict(words_file: String) -> io::Result<Dictionary> {
 // The output is wrapped in a Result to allow matching on errors
 // Returns an Iterator to the Reader of the lines of the file.
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-    where P: AsRef<Path>, {
+where
+    P: AsRef<Path>,
+{
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
@@ -140,6 +149,6 @@ fn char_to_digit(ch: char) -> u32 {
         'b' | 'k' | 'u' => 7,
         'l' | 'o' | 'p' => 8,
         'g' | 'h' | 'z' => 9,
-        _ => panic!("invalid input: not a digit: {}", ch)
+        _ => panic!("invalid input: not a digit: {}", ch),
     }
 }
