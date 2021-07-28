@@ -2,17 +2,12 @@ use std::collections::HashMap;
 use std::env::args;
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::ops::{Add, Mul};
 use std::path::Path;
 
-use lazy_static::lazy_static;
 use num_bigint::BigUint;
 
-type Dictionary = HashMap<BigUint, Vec<String>>;
-
-lazy_static! {
-    static ref ONE: BigUint = 1u8.into();
-    static ref TEN: BigUint = 10u8.into();
-}
+type Dictionary = HashMap<Number, Vec<String>>;
 
 static DIGITS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
@@ -47,10 +42,10 @@ fn print_translations<'dict>(
         print_solution(num, words);
         return Ok(());
     }
-    let mut n = ONE.clone();
+    let mut n = 1u8.into();
     let mut found_word = false;
     for i in start..digits.len() {
-        n = &n * (&*TEN) + nth_digit(digits, i);
+        n = n * 10u8 + nth_digit(digits, i);
         if let Some(found_words) = dict.get(&n) {
             for word in found_words {
                 found_word = true;
@@ -97,10 +92,10 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn word_to_number(word: &str) -> BigUint {
-    let mut n = ONE.clone();
+fn word_to_number(word: &str) -> Number {
+    let mut n = 1u8.into();
     for digit in word.chars().filter_map(char_to_digit) {
-        n = &n * (&*TEN) + digit;
+        n = n * 10u8 + digit;
     }
     n
 }
@@ -127,4 +122,42 @@ fn char_to_digit(ch: char) -> Option<u8> {
         'g' | 'h' | 'z' => 9,
         _ => return None,
     })
+}
+
+#[derive(Hash, PartialEq, Eq)]
+enum Number {
+    Uint(usize),
+    BigUint(BigUint),
+}
+
+impl From<u8> for Number {
+    fn from(val: u8) -> Self {
+        Number::Uint(val.into())
+    }
+}
+
+impl Add<u8> for Number {
+    type Output = Number;
+    fn add(self, rhs: u8) -> Number {
+        match self {
+            Number::Uint(val) => match val.checked_add(rhs.into()) {
+                Some(new_val) => Number::Uint(new_val),
+                None => Number::BigUint(BigUint::from(val) + rhs),
+            },
+            Number::BigUint(val) => Number::BigUint(val + rhs),
+        }
+    }
+}
+
+impl Mul<u8> for Number {
+    type Output = Number;
+    fn mul(self, rhs: u8) -> Number {
+        match self {
+            Number::Uint(val) => match val.checked_mul(rhs.into()) {
+                Some(new_val) => Number::Uint(new_val),
+                None => Number::BigUint(BigUint::from(val) * rhs),
+            },
+            Number::BigUint(val) => Number::BigUint(val * rhs),
+        }
+    }
 }
