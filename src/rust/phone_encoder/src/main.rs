@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
     let dict = load_dict(words_file)?;
 
     for num in read_lines(input_file)?.flatten() {
-        let digits: Vec<_> = num.chars().filter(|ch| ch.is_alphanumeric()).collect();
+        let digits: Vec<_> = num.chars().filter(|ch| ch.is_digit(10)).collect();
         print_translations(&num, &digits, 0, Vec::new(), &dict)?;
     }
     Ok(())
