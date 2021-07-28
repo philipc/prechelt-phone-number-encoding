@@ -5,13 +5,13 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use lazy_static::lazy_static;
-use num_bigint::{BigUint, ToBigUint};
+use num_bigint::BigUint;
 
 type Dictionary = HashMap<BigUint, Vec<String>>;
 
 lazy_static! {
-    static ref ONE: BigUint = 1.to_biguint().unwrap();
-    static ref TEN: BigUint = 10.to_biguint().unwrap();
+    static ref ONE: BigUint = 1u8.into();
+    static ref TEN: BigUint = 10u8.into();
 }
 
 /// Port of Peter Norvig's Lisp solution to the Prechelt phone-encoding problem.
@@ -20,17 +20,9 @@ lazy_static! {
 /// due to the very different natures of Lisp and Rust.
 fn main() -> io::Result<()> {
     // drop itself from args
-    let mut args: Vec<_> = args().skip(1).collect();
-    let words_file: String = if !args.is_empty() {
-        args.remove(0)
-    } else {
-        "tests/words.txt".into()
-    };
-    let input_file: String = if !args.is_empty() {
-        args.remove(0)
-    } else {
-        "tests/numbers.txt".into()
-    };
+    let mut args = args().skip(1);
+    let words_file = args.next().unwrap_or_else(|| "tests/words.txt".into());
+    let input_file = args.next().unwrap_or_else(|| "tests/numbers.txt".into());
 
     let dict = load_dict(words_file)?;
 
@@ -69,28 +61,17 @@ fn print_translations(
         let mut partial_solution = words.clone();
         let digit = nth_digit(digits, start).to_string();
         partial_solution.push(&digit);
-        print_translations(num, digits, start + 1, partial_solution, dict)
-    } else {
-        Ok(())
+        print_translations(num, digits, start + 1, partial_solution, dict)?;
     }
+    Ok(())
 }
 
 fn print_solution(num: &str, words: &[&String]) {
-    // do a little gymnastics here to avoid allocating a big string just for printing it
-    print!("{}", num);
-    if words.is_empty() {
-        println!(":");
-        return;
+    print!("{}:", num);
+    for word in words {
+        print!(" {}", word);
     }
-    print!(": ");
-    let (head, tail) = words.split_at(words.len() - 1);
-    for word in head {
-        print!("{} ", word);
-    }
-    // only last word in tail
-    for word in tail {
-        println!("{}", word);
-    }
+    println!();
 }
 
 fn load_dict(words_file: String) -> io::Result<Dictionary> {
@@ -115,25 +96,22 @@ where
 
 fn word_to_number(word: &str) -> BigUint {
     let mut n = ONE.clone();
-    for ch in word.chars() {
-        if ch.is_alphabetic() {
-            n = &n * (&*TEN) + char_to_digit(ch);
-        }
+    for digit in word.chars().filter_map(char_to_digit) {
+        n = &n * (&*TEN) + digit;
     }
     n
 }
 
 fn nth_digit(digits: &[char], i: usize) -> BigUint {
-    let ch = digits.get(i).expect("index out of bounds");
-    ((*ch as usize) - ('0' as usize)).to_biguint().unwrap()
+    ((digits[i] as usize) - ('0' as usize)).into()
 }
 
 fn is_digit(string: &str) -> bool {
     string.len() == 1 && string.chars().next().unwrap().is_digit(10)
 }
 
-fn char_to_digit(ch: char) -> u32 {
-    match ch.to_ascii_lowercase() {
+fn char_to_digit(ch: char) -> Option<u32> {
+    Some(match ch.to_ascii_lowercase() {
         'e' => 0,
         'j' | 'n' | 'q' => 1,
         'r' | 'w' | 'x' => 2,
@@ -144,6 +122,6 @@ fn char_to_digit(ch: char) -> u32 {
         'b' | 'k' | 'u' => 7,
         'l' | 'o' | 'p' => 8,
         'g' | 'h' | 'z' => 9,
-        _ => panic!("invalid input: not a digit: {}", ch),
-    }
+        _ => return None,
+    })
 }
