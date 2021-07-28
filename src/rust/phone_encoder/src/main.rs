@@ -4,15 +4,9 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use lazy_static::lazy_static;
 use num_bigint::BigUint;
 
 type Dictionary = HashMap<BigUint, Vec<String>>;
-
-lazy_static! {
-    static ref ONE: BigUint = 1u8.into();
-    static ref TEN: BigUint = 10u8.into();
-}
 
 static DIGITS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
@@ -47,10 +41,11 @@ fn print_translations<'dict>(
         print_solution(num, words);
         return Ok(());
     }
-    let mut n = ONE.clone();
+    let mut n = 1u8.into();
     let mut found_word = false;
     for i in start..digits.len() {
-        n = &n * (&*TEN) + nth_digit(digits, i);
+        n *= 10u8;
+        n += nth_digit(digits, i);
         if let Some(found_words) = dict.get(&n) {
             for word in found_words {
                 found_word = true;
@@ -98,9 +93,10 @@ where
 }
 
 fn word_to_number(word: &str) -> BigUint {
-    let mut n = ONE.clone();
+    let mut n = 1u8.into();
     for digit in word.chars().filter_map(char_to_digit) {
-        n = &n * (&*TEN) + digit;
+        n *= 10u8;
+        n += digit;
     }
     n
 }
