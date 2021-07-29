@@ -62,7 +62,7 @@ fn print_translations<'dict>(
     }
     if !found_word && !words.last().map(|w| is_digit(w)).unwrap_or(false) {
         let digit = nth_digit(digits, start);
-        words.push(DIGITS[digit]);
+        words.push(DIGITS[usize::from(digit)]);
         print_translations(num, digits, start + 1, words, dict)?;
         words.pop();
     }
@@ -105,15 +105,15 @@ fn word_to_number(word: &str) -> BigUint {
     n
 }
 
-fn nth_digit(digits: &[char], i: usize) -> usize {
-    (digits[i] as usize) - ('0' as usize)
+fn nth_digit(digits: &[char], i: usize) -> u8 {
+    digits[i] as u8 - b'0'
 }
 
 fn is_digit(string: &str) -> bool {
     string.len() == 1 && string.chars().next().unwrap().is_digit(10)
 }
 
-fn char_to_digit(ch: char) -> Option<u32> {
+fn char_to_digit(ch: char) -> Option<u8> {
     Some(match ch.to_ascii_lowercase() {
         'e' => 0,
         'j' | 'n' | 'q' => 1,
